@@ -7,27 +7,50 @@ const api = axios.create({
   },
 });
 
-// Interceptor para request
-api.interceptors.request.use(
-  (config) => {
-    console.log('API Request:', config.method?.toUpperCase(), config.url);
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+// Serviços específicos para seu backend Django
+export const dashboardService = {
+  async getResumo() {
+    const response = await api.get('/dashboard/resumo/');
+    return response.data;
   }
-);
+};
 
-// Interceptor para response
-api.interceptors.response.use(
-  (response) => {
-    console.log('API Response:', response.status, response.config.url);
-    return response;
+export const empresasService = {
+  async list(params = {}) {
+    const response = await api.get('/empresas/', { params });
+    return response.data;
   },
-  (error) => {
-    console.error('API Error:', error.response?.status, error.response?.data);
-    return Promise.reject(error);
+  
+  async getDetalhes(cnpj) {
+    const response = await api.get(`/empresas/${cnpj}/detalhe-completo/`);
+    return response.data;
   }
-);
+};
+
+export const calculosService = {
+  async getRanking(tipo = 'melhores', limite = 10) {
+    const response = await api.get('/calculos/ranking/', {
+      params: { tipo, limite }
+    });
+    return response.data;
+  },
+  
+  async list() {
+    const response = await api.get('/calculos/');
+    return response.data;
+  }
+};
+
+export const alertasService = {
+  async list() {
+    const response = await api.get('/alertas/');
+    return response.data;
+  },
+  
+  async gerarAlertas() {
+    const response = await api.post('/alertas/gerar-alertas/');
+    return response.data;
+  }
+};
 
 export default api;
