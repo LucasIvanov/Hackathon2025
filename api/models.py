@@ -1,7 +1,10 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth.models import User
-
+from django.contrib.auth.models import AbstractUser
+from django.utils import timezone
+from datetime import datetime
+from decimal import Decimal
 
 class Empresa(models.Model):
     PORTE_CHOICES = [
@@ -204,29 +207,69 @@ class CalculoImpacto(models.Model):
         return f"{self.empresa.cnpj} - B/C: {self.bc_ratio}"
 
 
-class Auditoria(models.Model):
-    ACAO_CHOICES = [
-        ('CONSULTA', 'Consulta'),
-        ('UPLOAD', 'Upload de Dados'),
-        ('CALCULO', 'Cálculo Realizado'),
-        ('EXPORTACAO', 'Exportação de Relatório'),
-        ('ALTERACAO', 'Alteração de Dados'),
-        ('EXCLUSAO', 'Exclusão de Dados'),
-    ]
+# class Auditoria(models.Model):
+#     ACAO_CHOICES = [
+#         ('CONSULTA', 'Consulta'),
+#         ('UPLOAD', 'Upload de Dados'),
+#         ('CALCULO', 'Cálculo Realizado'),
+#         ('EXPORTACAO', 'Exportação de Relatório'),
+#         ('ALTERACAO', 'Alteração de Dados'),
+#         ('EXCLUSAO', 'Exclusão de Dados'),
+#     ]
     
-    usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    acao = models.CharField(max_length=20, choices=ACAO_CHOICES)
-    tabela = models.CharField(max_length=50, blank=True)
-    registro_id = models.IntegerField(blank=True, null=True)
-    cnpj = models.CharField(max_length=14, blank=True)
-    detalhes = models.TextField(blank=True)
-    ip_address = models.GenericIPAddressField(blank=True, null=True)
-    user_agent = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+#     usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+#     acao = models.CharField(max_length=20, choices=ACAO_CHOICES)
+#     tabela = models.CharField(max_length=50, blank=True)
+#     registro_id = models.IntegerField(blank=True, null=True)
+#     cnpj = models.CharField(max_length=14, blank=True)
+#     detalhes = models.TextField(blank=True)
+#     ip_address = models.GenericIPAddressField(blank=True, null=True)
+#     user_agent = models.TextField(blank=True)
+#     created_at = models.DateTimeField(auto_now_add=True)
+    
+#     class Meta:
+#         db_table = 'auditoria'
+#         ordering = ['-created_at']
+    
+#     def __str__(self):
+#         return f"{self.usuario} - {self.get_acao_display()}"
+
+
+
+class UsuarioSistema(models.Model):
+    """Usuários do sistema de incentivos fiscais"""
+    username = models.CharField(max_length=50, unique=True)
+    email = models.EmailField()
+    senha = models.CharField(max_length=128)
+    nome_completo = models.CharField(max_length=100)
+    cargo = models.CharField(max_length=80, default='Analista')
+    departamento = models.CharField(max_length=80, default='SEMDEC')
+    ativo = models.BooleanField(default=True)
+    ultimo_login = models.DateTimeField(null=True, blank=True)  # Timezone aware
+    criado_em = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'usuarios_sistema'
+        verbose_name = 'Usuário do Sistema'
+        verbose_name_plural = 'Usuários do Sistema'
+    
+    def __str__(self):
+        return f"{self.nome_completo} ({self.username})"
+
+class Auditoria(models.Model):
+    """Log de auditoria do sistema"""
+    acao = models.CharField(max_length=50)
+    cnpj = models.CharField(max_length=18, blank=True)
+    detalhes = models.TextField()
+    usuario = models.CharField(max_length=100)  # Mudança: String simples em vez de ForeignKey
+    ip_address = models.GenericIPAddressField()
+    timestamp = models.DateTimeField(auto_now_add=True)
     
     class Meta:
         db_table = 'auditoria'
-        ordering = ['-created_at']
+        verbose_name = 'Auditoria'
+        verbose_name_plural = 'Auditorias'
+        ordering = ['-timestamp']
     
     def __str__(self):
-        return f"{self.usuario} - {self.get_acao_display()}"
+        return f"{self.acao} - {self.usuario} - {self.timestamp}"

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import (
     Empresa, Incentivo, ArrecadacaoISS, ArrecadacaoIPTU,
-    Contrapartida, Alerta, CalculoImpacto, Auditoria
+    Contrapartida, Alerta, CalculoImpacto, Auditoria, UsuarioSistema,
 )
 
 
@@ -80,3 +80,21 @@ class UploadCSVSerializer(serializers.Serializer):
         if not value.name.endswith('.csv'):
             raise serializers.ValidationError("Apenas arquivos CSV são permitidos")
         return value
+    
+
+class UsuarioSistemaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UsuarioSistema
+        fields = ['id', 'username', 'email', 'nome_completo', 'cargo', 'departamento', 'ativo', 'ultimo_login']
+        extra_kwargs = {
+            'senha': {'write_only': True}
+        }
+
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=50)
+    senha = serializers.CharField(max_length=128)
+
+class AuditoriaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Auditoria
+        fields = '__all__'

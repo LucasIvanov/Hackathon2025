@@ -13,6 +13,10 @@ import csv
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
+from datetime import datetime
+from .models import UsuarioSistema
+from .serializers import UsuarioSistemaSerializer, LoginSerializer
+from django.utils import timezone
 
 from .models import (
     Empresa, Incentivo, ArrecadacaoISS, ArrecadacaoIPTU,
@@ -521,3 +525,97 @@ class AuditoriaViewSet(viewsets.ReadOnlyModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['acao', 'cnpj']
     permission_classes = [AllowAny]
+
+
+class AuthViewSet(viewsets.ViewSet):
+    """ViewSet para autenticação"""
+    permission_classes = [AllowAny]
+    
+    @action(detail=False, methods=['post'])
+    def login(self, request):
+        """Login do usuário"""
+        serializer = LoginSerializer(data=request.data)
+        
+        if not serializer.is_valid():
+            return Response({
+                'error': 'Dados inválidos',
+                'detalhes': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        username = serializer.validated_data['username']
+        senha = serializer.validated_data['senha']
+        
+        try:
+            usuario = UsuarioSistema.objects.get(
+                username=username,
+                senha=senha,
+                ativo=True
+            )
+            
+            # Atualizar último login com timezone
+            usuario.ultimo_login = timezone.now()  # Usando timezone.now()
+            usuario.save()
+            
+            # Criar resposta
+            response_data = {
+                'success': True,
+                'message': 'Login realizado com sucesso',
+                'usuario': {
+                    'id': usuario.id,
+                    'username': usuario.username,
+                    'nome_completo': usuario.nome_completo,
+                    'email': usuario.email,
+                    'cargo': usuario.cargo,
+                    'departamento': usuario.departamento
+                },
+                'token': f'token_simples_{usuario.id}_{int(timezone.now().timestamp())}'
+            }
+            
+            # Log de auditoria - Corrigido
+            try:
+                Auditoria.objects.create(
+                    acao='LOGIN',
+                    cnpj='',
+                    detalhes=f'Login realizado por {usuario.nome_completo}',
+                    usuario=usuario.username,  # String simples
+                    ip_address=request.META.get('REMOTE_ADDR', '127.0.0.1'),
+                    timestamp=timezone.now()
+                )
+            except Exception as e:
+                logger.warning(f"Erro ao criar log de auditoria: {e}")
+            
+            return Response(response_data, status=status.HTTP_200_OK)
+            
+        except UsuarioSistema.DoesNotExist:
+            return Response({
+                'error': 'Usuário ou senha inválidos'
+            }, status=status.HTTP_401_UNAUTHORIZED)
+        except Exception as e:
+            logger.error(f"Erro no login: {str(e)}")
+            return Response({
+                'error': 'Erro interno do servidor'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['post'])
+    def logout(self, request):
+        """Logout do usuário"""
+        return Response({
+            'success': True,
+            'message': 'Logout realizado com sucesso'
+        }, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=['get'])
+    def verificar_token(self, request):
+        """Verificar se token é válido"""
+        token = request.headers.get('Authorization', '').replace('Bearer ', '')
+        
+        if token and token.startswith('token_simples_'):
+            return Response({
+                'valid': True,
+                'message': 'Token válido'
+            }, status=status.HTTP_200_OK)
+        
+        return Response({
+            'valid': False,
+            'message': 'Token inválido'
+        }, status=status.HTTP_401_UNAUTHORIZED)
