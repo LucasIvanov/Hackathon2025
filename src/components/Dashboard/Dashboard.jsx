@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { dashboardService, calculosService, alertasService } from '../../services/api';
+import React, { useState, useEffect } from 'react';
 import MetricCard from './MetricCard';
 import ImpactChart from './ImpactChart';
 import RankingTable from './RankingTable';
+import { dashboardService } from '../../services/api';
 
-export default function Dashboard() {
+const Dashboard = () => {
   const [metricas, setMetricas] = useState({
     custoTotal: 0,
-    retornoTotal: 0, 
+    retornoTotal: 0,
     impactoLiquido: 0,
     bcMedio: 0,
     totalEmpresas: 0,
@@ -15,83 +15,58 @@ export default function Dashboard() {
   });
 
   const [chartData, setChartData] = useState(null);
-  const [rankings, setRankings] = useState({
-    custoBeneficio: [],
-    impactoLiquido: []
-  });
-  const [alertasAtivos, setAlertasAtivos] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const loadDashboardData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      // Carregar dados do dashboard
-      const resumo = await dashboardService.getResumo();
-      
-      setMetricas({
-        custoTotal: resumo.custo_fiscal_total || 0,
-        retornoTotal: resumo.arrecadacao_incremental_total || 0,
-        impactoLiquido: resumo.impacto_liquido_total || 0,
-        bcMedio: resumo.bc_medio || 0,
-        totalEmpresas: resumo.total_empresas || 0,
-        totalIncentivos: resumo.total_incentivos_ativos || 0
-      });
-
-      setAlertasAtivos(resumo.total_alertas_ativos || 0);
-
-      // Carregar ranking
-      const rankingData = await calculosService.getRanking('melhores', 10);
-      
-      // Adaptar dados para o formato esperado pelo componente
-      const empresasRanking = rankingData.map(calc => ({
-        id: calc.empresa?.id || Math.random(),
-        nome: calc.empresa?.razao_social || 'Empresa não identificada',
-        cnpj: calc.empresa?.cnpj || '00000000000000',
-        setor: calc.empresa?.cnae_descricao || 'Não informado',
-        ratio: calc.bc_ratio || 0,
-        impacto_liquido: calc.impacto_liquido || 0,
-        crescimento: Math.random() * 20 + 5 // Simulado por enquanto
-      }));
-
-      setRankings({
-        custoBeneficio: empresasRanking,
-        impactoLiquido: [...empresasRanking].sort((a, b) => b.impacto_liquido - a.impacto_liquido)
-      });
-
-      // Simular dados do gráfico (últimos 12 meses)
-      const chartLabels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
-                          'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-      
-      setChartData({
-        labels: chartLabels,
-        custos: chartLabels.map(() => Math.random() * 500000 + 200000),
-        retornos: chartLabels.map(() => Math.random() * 800000 + 300000)
-      });
-
-    } catch (error) {
-      console.error("Erro ao carregar dados:", error);
-      // Usar dados simulados em caso de erro
-      setMetricas({
-        custoTotal: 2850000,
-        retornoTotal: 4120000,
-        impactoLiquido: 1270000,
-        bcMedio: 1.45,
-        totalEmpresas: 158,
-        totalIncentivos: 87
-      });
-    }
-    setIsLoading(false);
-  }, []);
+  const [rankingData, setRankingData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadDashboardData();
-  }, [loadDashboardData]);
+    carregarDados();
+  }, []);
 
-  if (isLoading) {
+  const carregarDados = async () => {
+    try {
+      setLoading(true);
+      
+      // Simular carregamento (substituir pela API real)
+      setTimeout(() => {
+        setMetricas({
+          custoTotal: 2850000,
+          retornoTotal: 4120000,
+          impactoLiquido: 1270000,
+          bcMedio: 1.45,
+          totalEmpresas: 158,
+          totalIncentivos: 87
+        });
+
+        // Dados do gráfico simulados
+        setChartData({
+          labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+          custos: [230000, 250000, 280000, 260000, 290000, 310000, 295000, 320000, 285000, 300000, 315000, 285000],
+          retornos: [350000, 380000, 420000, 390000, 450000, 480000, 465000, 510000, 445000, 475000, 495000, 445000]
+        });
+
+        // Dados de ranking simulados
+        setRankingData([
+          { id: 1, nome: 'Empresa Alpha Ltda', cnpj: '12345678000123', setor: 'Tecnologia', ratio: 2.5, impacto_liquido: 450000, crescimento: 15.2 },
+          { id: 2, nome: 'Beta Comércio SA', cnpj: '98765432000156', setor: 'Comércio', ratio: 2.1, impacto_liquido: 320000, crescimento: 8.7 },
+          { id: 3, nome: 'Gamma Indústria ME', cnpj: '11122233000144', setor: 'Indústria', ratio: 1.9, impacto_liquido: 280000, crescimento: 12.3 }
+        ]);
+
+        setLoading(false);
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="loading-container">
-        <div className="loading-spinner"></div>
-        <p>Carregando dashboard...</p>
+      <div className="dashboard">
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Carregando dashboard...</p>
+        </div>
       </div>
     );
   }
@@ -154,30 +129,13 @@ export default function Dashboard() {
         
         <div className="ranking-section">
           <RankingTable 
-            empresas={rankings.custoBeneficio} 
+            empresas={rankingData} 
             tipo="custo_beneficio"
           />
         </div>
       </div>
-
-      {/* Alertas */}
-      {alertasAtivos > 0 && (
-        <div className="alerts-banner">
-          <div className="alert-content">
-            <span className="alert-icon">🚨</span>
-            <div className="alert-text">
-              <strong>Atenção!</strong> 
-              Existem {alertasAtivos} alertas ativos no sistema.
-            </div>
-            <button 
-              className="alert-button"
-              onClick={() => window.location.href = '#alertas'}
-            >
-              Ver alertas
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
-}
+};
+
+export default Dashboard;
