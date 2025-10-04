@@ -1,5 +1,5 @@
 import React from 'react';
-
+ 
 export default function RankingTable({ empresas, tipo = "custo_beneficio" }) {
   const getTitleByType = () => {
     switch(tipo) {
@@ -68,9 +68,12 @@ export default function RankingTable({ empresas, tipo = "custo_beneficio" }) {
       </div>
 
       <div className="ranking-footer">
-        <button className="ranking-see-all">
-          <span>Ver todas as empresas</span>
-          <span className="arrow-icon">→</span>
+        <button className="ranking-see-all"
+        onClick={()=>window.dispatchEvent(new CustomEvent('navigateTo',{detail: {tab:'empresas'}}))}
+        aria-label = "Ver todas as empresas"
+        >
+        <span>Ver todas as empresas</span>
+        <span className="arrow-icon">→</span>
         </button>
       </div>
     </div>

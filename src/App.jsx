@@ -1,16 +1,30 @@
+// frontend/src/App.jsx
 import React, { useState } from 'react';
-import './styles/dashboard.css';
-
-// Importar componentes
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Login from './components/Login/Login';
 import Dashboard from './components/Dashboard/Dashboard';
 import Empresas from './components/Pages/Empresas';
-import Upload from './components/Pages/Upload'; 
+import Upload from './components/Pages/Upload';
 import Alertas from './components/Pages/Alertas';
+import './styles/dashboard.css';
 
-function App() {
+const AppContent = () => {
+  const { user, logout, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  // Componentes das páginas
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Carregando...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Login />;
+  }
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -35,14 +49,14 @@ function App() {
     },
     {
       id: 'empresas',
-      title: "Empresas", 
+      title: "Empresas",
       icon: "🏢",
       description: "Gestão de empresas"
     },
     {
       id: 'upload',
       title: "Upload",
-      icon: "📁", 
+      icon: "📁",
       description: "Importar dados"
     },
     {
@@ -68,6 +82,17 @@ function App() {
           </div>
         </div>
 
+        {/* User Info */}
+        <div className="user-info">
+          <div className="user-avatar">
+            {user.nome_completo.charAt(0).toUpperCase()}
+          </div>
+          <div className="user-details">
+            <div className="user-name">{user.nome_completo}</div>
+            <div className="user-role">{user.cargo}</div>
+          </div>
+        </div>
+
         {/* Navigation */}
         <nav className="sidebar-nav">
           <div className="nav-section">
@@ -76,10 +101,7 @@ function App() {
               <button
                 key={item.id}
                 className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
-                onClick={() => {
-                  console.log('Botão clicado:', item.id);
-                  setActiveTab(item.id);
-                }}
+                onClick={() => setActiveTab(item.id)}
               >
                 <span className="nav-icon">{item.icon}</span>
                 <div className="nav-content">
@@ -91,16 +113,21 @@ function App() {
           </div>
         </nav>
 
-        {/* Status */}
-        <div className="sidebar-status">
-          <div className="status-header">
-            <span className="status-icon">📈</span>
-            <span className="status-label">Status do Sistema</span>
+        {/* Status e Logout */}
+        <div className="sidebar-footer">
+          <div className="sidebar-status">
+            <div className="status-header">
+              <span className="status-icon">📈</span>
+              <span className="status-label">Status do Sistema</span>
+            </div>
+            <div className="status-metrics">
+              <div className="status-value">100%</div>
+              <div className="status-text">Operacional</div>
+            </div>
           </div>
-          <div className="status-metrics">
-            <div className="status-value">100%</div>
-            <div className="status-text">Operacional</div>
-          </div>
+          <button className="logout-button" onClick={logout}>
+            🚪 Sair do Sistema
+          </button>
         </div>
       </aside>
 
@@ -109,6 +136,14 @@ function App() {
         {renderContent()}
       </main>
     </div>
+  );
+};
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

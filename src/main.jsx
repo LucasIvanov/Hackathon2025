@@ -9,3 +9,5 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <App />
   </React.StrictMode>
 )
+//grafico por setores
+//filtro por setores, bairro etc
