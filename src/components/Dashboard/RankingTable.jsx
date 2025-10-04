@@ -1,6 +1,6 @@
 import React from 'react';
- 
-export default function RankingTable({ empresas, tipo = "custo_beneficio" }) {
+
+export default function RankingTable({ empresas, tipo = "custo_beneficio", onVerTodasEmpresas }) {
   const getTitleByType = () => {
     switch(tipo) {
       case "custo_beneficio": return "Melhor Custo-Benefício";
@@ -27,12 +27,18 @@ export default function RankingTable({ empresas, tipo = "custo_beneficio" }) {
     }
   };
 
+  const handleVerEmpresa = (empresa) => {
+    console.log('Ver detalhes da empresa:', empresa);
+    // Implementar depois - modal ou página de detalhes
+    alert(`Ver detalhes da empresa: ${empresa.nome}\nCNPJ: ${empresa.cnpj}`);
+  };
+
   return (
     <div className="ranking-card">
       <div className="ranking-header">
         <div className="ranking-title-section">
           <h3 className="ranking-title">{getTitleByType()}</h3>
-          <span className="ranking-subtitle">Top 10</span>
+          <span className="ranking-subtitle">TOP 10</span>
         </div>
         <span className="ranking-icon">🏆</span>
       </div>
@@ -44,7 +50,7 @@ export default function RankingTable({ empresas, tipo = "custo_beneficio" }) {
               <span className="position-number">{getMedalEmoji(index)}</span>
             </div>
             
-            <div className="empresa-info">
+            <div className="empresa-info" onClick={() => handleVerEmpresa(empresa)}>
               <div className="empresa-name">{empresa.nome}</div>
               <div className="empresa-details">
                 <span className="empresa-cnpj">{empresa.cnpj}</span>
@@ -68,12 +74,19 @@ export default function RankingTable({ empresas, tipo = "custo_beneficio" }) {
       </div>
 
       <div className="ranking-footer">
-        <button className="ranking-see-all"
-        onClick={()=>window.dispatchEvent(new CustomEvent('navigateTo',{detail: {tab:'empresas'}}))}
-        aria-label = "Ver todas as empresas"
+        <button 
+          className="ranking-see-all"
+          onClick={() => {
+            console.log('🔗 Navegando para página de empresas...');
+            if (onVerTodasEmpresas) {
+              onVerTodasEmpresas();
+            } else {
+              alert('Navegando para a página de empresas...');
+            }
+          }}
         >
-        <span>Ver todas as empresas</span>
-        <span className="arrow-icon">→</span>
+          <span>Ver todas as empresas</span>
+          <span className="arrow-icon">→</span>
         </button>
       </div>
     </div>

@@ -1,9 +1,8 @@
-// frontend/src/components/Login/Login.jsx
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import './Login.css';
 
-const Login = ({ onLogin }) => {
+const Login = () => {
   const [formData, setFormData] = useState({
     username: '',
     senha: ''
@@ -34,9 +33,7 @@ const Login = ({ onLogin }) => {
 
     const result = await login(formData.username, formData.senha);
 
-    if (result.success) {
-      onLogin(result.user);
-    } else {
+    if (!result.success) {
       setError(result.error);
     }
 
@@ -45,9 +42,9 @@ const Login = ({ onLogin }) => {
 
   // Usuários de demonstração
   const usuariosDemo = [
-    { username: 'admin', senha: 'admin123', nome: 'Administrador' },
-    { username: 'analista1', senha: 'senha123', nome: 'Analista Fiscal' },
-    { username: 'gestor', senha: 'gestor123', nome: 'Gerente' }
+    { username: 'admin', senha: 'admin123', nome: 'Administrador', cargo: 'Coordenador' },
+    { username: 'analista1', senha: 'senha123', nome: 'Analista Fiscal', cargo: 'Analista' },
+    { username: 'gestor', senha: 'gestor123', nome: 'Gerente', cargo: 'Gerente' }
   ];
 
   const preencherDemo = (usuario) => {
@@ -145,8 +142,11 @@ const Login = ({ onLogin }) => {
                     onClick={() => preencherDemo(usuario)}
                     disabled={loading}
                   >
-                    {usuario.nome}
-                    <small>({usuario.username})</small>
+                    <div className="demo-info">
+                      <strong>{usuario.nome}</strong>
+                      <small>{usuario.cargo}</small>
+                      <code>({usuario.username}/{usuario.senha})</code>
+                    </div>
                   </button>
                 ))}
               </div>
