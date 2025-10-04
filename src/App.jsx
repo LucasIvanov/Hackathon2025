@@ -1,41 +1,52 @@
-import React from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import Dashboard from './components/Dashboard'
-import Empresas from './components/Empresas'
-import UpdateCSV from './components/UpdateCSV'
-import Login from './pages/Login'
-import 'bootstrap/dist/css/bootstrap.min.css'
+import React, { useState } from 'react';
+import Sidebar from './components/Layout/Sidebar';
+import Dashboard from './pages/Dashboard';
+import './styles/dashboard.css';
 
 function App() {
-  return (
-    <Router>
-      <div className="App">
-        {/* Navbar */}
-        <nav className="navbar navbar-expand-lg navbar-dark bg-primary">
-          <div className="container">
-            <a className="navbar-brand" href="/">
-              🏛️ SEMDEC - Incentivos Fiscais
-            </a>
-            <div className="navbar-nav ms-auto">
-              <a className="nav-link" href="/">Dashboard</a>
-              <a className="nav-link" href="/empresas">Empresas</a>
-              <a className="nav-link" href="/upload">Upload</a>
-            </div>
-          </div>
-        </nav>
+  const [activeTab, setActiveTab] = useState('dashboard');
 
-        {/* Main Content */}
-        <div className="container-fluid mt-4">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/empresas" element={<Empresas />} />
-            <Route path="/upload" element={<UpdateCSV />} />
-            <Route path="/login" element={<Login />} />
-          </Routes>
-        </div>
-      </div>
-    </Router>
-  )
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return <Dashboard />;
+      case 'empresas':
+        return (
+          <div className="page-content">
+            <h1>🏢 Empresas</h1>
+            <p>Gestão de empresas cadastradas no sistema</p>
+            <div className="coming-soon">Em desenvolvimento...</div>
+          </div>
+        );
+      case 'upload':
+        return (
+          <div className="page-content">
+            <h1>📁 Upload de Dados</h1>
+            <p>Importar arquivos CSV para o sistema</p>
+            <div className="coming-soon">Em desenvolvimento...</div>
+          </div>
+        );
+      case 'alertas':
+        return (
+          <div className="page-content">
+            <h1>🚨 Alertas</h1>
+            <p>Monitoramento e alertas do sistema</p>
+            <div className="coming-soon">Em desenvolvimento...</div>
+          </div>
+        );
+      default:
+        return <Dashboard />;
+    }
+  };
+
+  return (
+    <div className="app">
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <main className="main-content">
+        {renderContent()}
+      </main>
+    </div>
+  );
 }
 
-export default App
+export default App;
