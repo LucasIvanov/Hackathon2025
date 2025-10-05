@@ -38,6 +38,58 @@ const Empresas = ({ onChangeTab }) => {
     }
   };
 
+  // Exportar as empresas filtradas para CSV
+  const exportReport = () => {
+    const rows = empresasFiltradas;
+    if (!rows || rows.length === 0) {
+      alert('Nenhuma empresa para exportar');
+      return;
+    }
+
+    const headers = ['ID','CNPJ','Razão Social','Setor','Bairro','Porte','B/C Ratio','Impacto Líquido'];
+
+    const escapeCsv = (value) => {
+      if (value === null || value === undefined) return '';
+      const s = String(value);
+      // Escapa aspas duplas conforme RFC4180
+      if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+        return '"' + s.replace(/"/g, '""') + '"';
+      }
+      return s;
+    };
+
+    const lines = rows.map(r => [
+      r.id,
+      // forçar CNPJ como string para preservar zeros à esquerda
+      `"${String(r.cnpj)}"`,
+      escapeCsv(r.razao_social),
+      escapeCsv(r.cnae_descricao),
+      escapeCsv(r.bairro),
+      escapeCsv(r.porte),
+      r.bc_ratio,
+      // exportar impacto em reais
+      Number(r.impacto_liquido)
+    ].join(','));
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...lines].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const filename = `empresas-report-${new Date().toISOString().slice(0,10)}.csv`;
+
+    if (navigator.msSaveBlob) { // IE10+
+      navigator.msSaveBlob(blob, filename);
+    } else {
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+  };
+
   // Função única para ver detalhes da empresa
   const handleVerDetalhes = (empresa) => {
     const detalhes = `📋 DETALHES DA EMPRESA
@@ -91,7 +143,11 @@ const Empresas = ({ onChangeTab }) => {
           >
             ← Voltar ao Dashboard
           </button>
-          <button className="btn-primary">
+          <button 
+            className="btn-primary"
+            onClick={exportReport}
+            aria-label="Exportar relatório de empresas"
+          >
             📊 Exportar Relatório
           </button>
         </div>
@@ -251,7 +307,7 @@ const Empresas = ({ onChangeTab }) => {
               </span>
             </div>
             <div className="stat-item">
-              <span className="stat-label">Empresas com B/C > 1.5</span>
+              <span className="stat-label">Empresas com B/C {'>'} 1.5</span>
               <span className="stat-value">
                 {empresas.filter(emp => emp.bc_ratio > 1.5).length}
               </span>
