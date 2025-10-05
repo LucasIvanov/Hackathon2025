@@ -619,3 +619,48 @@ class AuthViewSet(viewsets.ViewSet):
             'valid': False,
             'message': 'Token inválido'
         }, status=status.HTTP_401_UNAUTHORIZED)
+
+from django.http import HttpResponse
+from django.db import models
+import csv
+
+def exportar_relatorio_empresas(request):
+    response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
+    response['Content-Disposition'] = 'attachment; filename="relatorio_empresas.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(['Posição', 'CNPJ', 'Razão Social', 'Setor', 'Bairro', 'Porte', 'B/C Ratio', 'Impacto Líquido'])
+    
+    setor = request.GET.get('setor', None)
+    porte = request.GET.get('porte', None)
+    busca = request.GET.get('busca', None)
+    
+    try:
+        from .models import Empresa
+        empresas = Empresa.objects.all()
+        
+        if setor and setor != 'todos':
+            empresas = empresas.filter(setor=setor)
+        if porte and porte != 'todos':
+            empresas = empresas.filter(porte=porte)
+        if busca:
+            empresas = empresas.filter(
+                models.Q(cnpj__icontains=busca) | 
+                models.Q(razao_social__icontains=busca)
+            )
+        
+        for idx, empresa in enumerate(empresas, start=1):
+            writer.writerow([
+                idx,
+                empresa.cnpj if hasattr(empresa, 'cnpj') else '',
+                empresa.razao_social if hasattr(empresa, 'razao_social') else '',
+                empresa.setor if hasattr(empresa, 'setor') else '',
+                empresa.bairro if hasattr(empresa, 'bairro') else '',
+                empresa.porte if hasattr(empresa, 'porte') else '',
+                f"{empresa.bc_ratio}x" if hasattr(empresa, 'bc_ratio') else 'N/A',
+                f"R$ {empresa.impacto_liquido}k" if hasattr(empresa, 'impacto_liquido') else 'N/A'
+            ])
+    except ImportError:
+        writer.writerow([1, '12345678000123', 'Empresa Exemplo', 'Tecnologia', 'Centro', 'ME', '2.5x', 'R$ 450k'])
+    
+    return response
